@@ -12,36 +12,44 @@ class MyEvent{
   }
 
   once(name,fun,thisArg){
-    const handles = this.events[name] = this.events[name] ?? new Set()
-    handles.add({
-      thisArg,
-      once: true,
-      fun
-    })
+    const cb = (...args)=>{
+      this.off(name,cb)
+      fun.apply(thisArg,...args)
+    }
+    this.on(name,cb)
   }
 
-  emit(name,...arg){
+  emit(name,...args){
     const handles = this.events[name]
-    handles.forEach((handle)=>{
-      const {fun,thisArg,once} = handle
-      fun.apply(thisArg,...arg)
-      if(once){
-        handles.delete(handle)
-      }
+    if(!handles) return 
+    
+    handles.forEach(({fun,thisArg})=>{
+      fun.apply(thisArg,...args)
     })
   }
 
   off(name,fun){
     const handles = this.events[name]
+    if(!handles) return
+
     handles.forEach(handle=>{
       if(handle.fun === fun){
         handles.delete(handle)
       }
     })
+
+   if(handles.size===0){
+    delete this.events[name]
+   }
   }
 }
 
 const e = new MyEvent()
-e.once('test',()=>{console.log('hahahah')})
+e.once('test',function(){
+  console.log('hahahah')
+  console.log('age',this.age)
+},{
+  age: 18
+})
 e.emit('test')
 e.emit('test')
