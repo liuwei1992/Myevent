@@ -1,37 +1,47 @@
 class MyEvent{
   constructor(){
-    this.handers = {}
+    this.events = {}
   }
 
   on(name,fun,thisArg){
-    const funs = this.handers[name] = this.handers[name] ?? new Set()
-    fun.thisArg = thisArg
-    funs.add(fun)
+    const handles = this.events[name] = this.events[name] ?? new Set()
+    handles.add({
+      thisArg,
+      fun
+    })
   }
 
   once(name,fun,thisArg){
-    const funs = this.handers[name] = this.handers[name] ?? new Set()
-    fun.thisArg = thisArg
-    fun.once = true
-    funs.add(fun)
+    const handles = this.events[name] = this.events[name] ?? new Set()
+    handles.add({
+      thisArg,
+      once: true,
+      fun
+    })
   }
 
   emit(name,...arg){
-    const funs = this.handers[name]
-    funs.forEach(fun=>{
-      fun.apply(fun.thisArg,...arg)
-      if(fun.once){
-        funs.delete(fun)
+    const handles = this.events[name]
+    handles.forEach((handle)=>{
+      const {fun,thisArg,once} = handle
+      fun.apply(thisArg,...arg)
+      if(once){
+        handles.delete(handle)
       }
     })
   }
 
   off(name,fun){
-    const funs = this.handers[name]
-    funs.delete(fun)
+    const handles = this.events[name]
+    handles.forEach(handle=>{
+      if(handle.fun === fun){
+        handles.delete(handle)
+      }
+    })
   }
 }
 
 const e = new MyEvent()
-e.on('test',()=>{console.log('hahahah')})
+e.once('test',()=>{console.log('hahahah')})
+e.emit('test')
 e.emit('test')
